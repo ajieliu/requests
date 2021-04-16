@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	urlutil "net/url"
+	"strings"
 )
 
 type requestOptions struct {
@@ -23,27 +23,28 @@ var defaultRequestOptions = requestOptions{
 }
 
 func (o *requestOptions) newRequest(method, url string) (req *http.Request, err error) {
-	// params
-	u, err := urlutil.Parse(url)
-	if err != nil {
-		return
-	}
-	for k, vs := range o.params {
-		for _, v := range vs {
-			u.Query().Add(k, v)
-		}
-	}
-
 	// body
 	br, err := o.bodyfn()
 	if err != nil {
 		return
 	}
 
-	req, err = http.NewRequest(method, u.RequestURI(), br)
+	req, err = http.NewRequest(method, url, br)
 	if err != nil {
 		return
 	}
+
+	for k, vs := range o.headers {
+		for _, v := range vs {
+			req.Header.Add(k, v)
+		}
+	}
+
+	if req.URL.RawQuery != "" && !strings.HasSuffix(req.URL.RawQuery, "&") {
+		req.URL.RawQuery += "&"
+	}
+
+	req.URL.RawQuery += o.params.String()
 
 	return req, nil
 }
