@@ -2,8 +2,16 @@ package requests
 
 import "net/http"
 
+var (
+	dr = NewRequest(http.DefaultClient)
+)
+
 type Request struct {
 	c *http.Client
+}
+
+func NewRequest(c *http.Client) *Request {
+	return &Request{c: c}
 }
 
 func (r *Request) Request(method, url string, opts ...Option) (response *Response, err error) {
@@ -46,4 +54,24 @@ func (r *Request) Patch(url string, opts ...Option) (*Response, error) {
 
 func (r *Request) Head(url string, opts ...Option) (*Response, error) {
 	return r.Request(http.MethodHead, url, opts...)
+}
+
+func Get(url string, opts ...Option) (*Response, error) {
+	return dr.Get(url, opts...)
+}
+
+func Post(url string, opts ...Option) (*Response, error) {
+	return dr.Post(url, opts...)
+}
+
+func Put(url string, opts ...Option) (*Response, error) {
+	return dr.Put(url, opts...)
+}
+
+func Patch(url string, opts ...Option) (*Response, error) {
+	return dr.Patch(url, opts...)
+}
+
+func Head(url string, opts ...Option) (*Response, error) {
+	return dr.Head(url, opts...)
 }
