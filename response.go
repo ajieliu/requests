@@ -2,6 +2,7 @@ package requests
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -21,4 +22,8 @@ func (r *Response) Json(v interface{}) (err error) {
 	}
 
 	return json.Unmarshal(body, v)
+}
+
+func (r *Response) String() string {
+	return fmt.Sprintf("%v", r.Response)
 }
