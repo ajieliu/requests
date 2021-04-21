@@ -27,3 +27,7 @@ func (r *Response) Json(v interface{}) (err error) {
 func (r *Response) String() string {
 	return fmt.Sprintf("%v", r.Response)
 }
+
+func (r *Response) CloseBodySilently() {
+	_ = r.Body.Close()
+}
