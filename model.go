@@ -22,6 +22,15 @@ func (h H) Del(k string) H {
 	return h
 }
 
+func (h H) override(hs ...H) H {
+	for _, header := range hs {
+		for k, vs := range header {
+			h[k] = vs
+		}
+	}
+	return h
+}
+
 type P url.Values
 
 func (p P) Get(key string) string {

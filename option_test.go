@@ -6,11 +6,10 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestWithBodyBytes(t *testing.T) {
@@ -26,10 +25,18 @@ func TestWithBodyBytes(t *testing.T) {
 		o := WithBodyBytes(tc.data)
 		o(&opts)
 		r, err := opts.bodyfn()
-		assert.Nil(t, err, i)
+		if err != nil {
+			t.Error(err)
+		}
+
 		data, err := ioutil.ReadAll(r)
-		assert.Nil(t, err, i)
-		assert.Equal(t, tc.data, data, i)
+		if err != nil {
+			t.Errorf("[%d] unexpect error with read data: %v", i, err)
+		}
+
+		if string(data) != string(tc.data) {
+			t.Errorf("[%d] response body: %s, expect: %s", i, data, tc.data)
+		}
 	}
 }
 
@@ -56,14 +63,29 @@ func TestWithBodyJson(t *testing.T) {
 		WithBodyJson(tc.data)(&opts)
 
 		r, err := opts.bodyfn()
-		assert.Equal(t, tc.err, err, i)
 		if err != nil {
+			if tc.err == nil {
+				t.Errorf("[%d] unexpected error %v", i, err)
+			}
+
+			if tc.err.Error() != err.Error() {
+				t.Errorf("[%d] unexpeceted error %v != %v", i, tc.err, err)
+			}
+
 			return
 		}
 
+		if tc.err != nil {
+			t.Errorf("[%d] expected error %v does not occurred", i, tc.err)
+		}
+
 		data, err := ioutil.ReadAll(r)
-		assert.Nil(t, err, i)
-		assert.Equal(t, string(tc.expect), string(data), i)
+		if err != nil {
+			t.Errorf("[%d] unexpect error: %v", i, err)
+		}
+		if string(tc.expect) != string(data) {
+			t.Errorf("[%d] unexpect value. %s != %s", i, tc.expect, data)
+		}
 	}
 }
 
@@ -77,15 +99,23 @@ func TestWithBodyReader(t *testing.T) {
 		{strings.NewReader(""), []byte{}},
 	}
 
-	for i, tc := range testcases {
+	for _, tc := range testcases {
 		opts := defaultRequestOptions
 		WithBodyReader(tc.r)(&opts)
 
 		r, err := opts.bodyfn()
-		assert.Nil(t, err, i)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		data, err := ioutil.ReadAll(r)
-		assert.Nil(t, err, i)
-		assert.Equal(t, tc.expect, data, i)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if string(tc.expect) != string(data) {
+			t.Errorf("with body reader data: wanted %s, got %s", tc.expect, data)
+		}
 	}
 }
 
@@ -98,10 +128,12 @@ func TestWithHeaders(t *testing.T) {
 		{H{}.Add("key", "value")},
 	}
 
-	for i, tc := range testcases {
+	for _, tc := range testcases {
 		opts := defaultRequestOptions
 		WithHeaders(tc.h)(&opts)
-		assert.Equal(t, tc.h, opts.headers, i)
+		if !reflect.DeepEqual(tc.h, opts.headers) {
+			t.Errorf("with headers: wanted %v, got %v", tc.h, opts.headers)
+		}
 	}
 }
 
@@ -114,11 +146,13 @@ func TestWithParams(t *testing.T) {
 		{P{}.Add("name", "liu")},
 	}
 
-	for i, tc := range testcases {
+	for _, tc := range testcases {
 		opts := defaultRequestOptions
 		WithParams(tc.p)(&opts)
 
-		assert.Equal(t, tc.p, opts.params, i)
+		if tc.p.String() != opts.params.String() {
+			t.Errorf("params: wanted %s, got %s", tc.p, opts.params)
+		}
 	}
 }
 
@@ -179,15 +213,25 @@ func TestNewRequest(t *testing.T) {
 		},
 	}
 
-	for i, tc := range testcases {
+	for _, tc := range testcases {
 		req, err := tc.opts.newRequest(tc.method, tc.url)
-		assert.Equal(t, tc.expectErr, err, i)
+		if !reflect.DeepEqual(tc.expectErr, err) {
+			t.Errorf("new request error: wanted %v, got %v", tc.expectErr, err)
+		}
 		if err != nil {
 			return
 		}
 
-		assert.Equal(t, req.Method, tc.method, i)
-		assert.EqualValues(t, req.Header, tc.expectHeaders, i)
-		assert.EqualValues(t, req.URL.Query(), tc.expectParams, i)
+		if req.Method != tc.method {
+			t.Errorf("request method: wanted %s, got %s", tc.method, req.Method)
+		}
+
+		if !reflect.DeepEqual(req.Header, http.Header(tc.expectHeaders)) {
+			t.Errorf("request headers: wanted %v, got %v", tc.expectHeaders, req.Header)
+		}
+
+		if req.URL.Query().Encode() != tc.expectParams.String() {
+			t.Errorf("request query: wanted %s, got %s", tc.expectParams.String(), req.URL.Query().Encode())
+		}
 	}
 }

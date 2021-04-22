@@ -4,11 +4,10 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
 	"testing/iotest"
-
-	"github.com/stretchr/testify/assert"
 )
 
 type mockReadCloser struct {
@@ -57,8 +56,16 @@ func TestResponse_Json(t *testing.T) {
 		v := &mockResponseData{}
 		err := resp.Json(v)
 
-		assert.Equal(t, tc.expectErr, err, i)
-		assert.Equal(t, tc.expectValue, v, i)
-		assert.False(t, rc.IsClose)
+		if !reflect.DeepEqual(tc.expectErr, err) {
+			t.Fatalf("response json error: wanted %v, got %v", tc.expectErr, err)
+		}
+
+		if !reflect.DeepEqual(tc.expectValue, v) {
+			t.Errorf("response json data: wanted %v, got %v", tc.expectValue, v)
+		}
+
+		if rc.IsClose {
+			t.Errorf("[%d] unexpected close status", i)
+		}
 	}
 }

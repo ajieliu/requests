@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+const (
+	headerContentTypeKey = "Content-Type"
+)
+
 type requestOptions struct {
 	headers H
 	params  P
@@ -15,8 +19,8 @@ type requestOptions struct {
 }
 
 var defaultRequestOptions = requestOptions{
-	headers: H{},
-	params:  P{},
+	headers: nil,
+	params:  nil,
 	bodyfn: func() (io.Reader, error) {
 		return nil, nil
 	},
@@ -35,9 +39,7 @@ func (o *requestOptions) newRequest(method, url string) (req *http.Request, err 
 	}
 
 	for k, vs := range o.headers {
-		for _, v := range vs {
-			req.Header.Add(k, v)
-		}
+		req.Header[k] = append(req.Header[k], vs...)
 	}
 
 	if req.URL.RawQuery != "" && !strings.HasSuffix(req.URL.RawQuery, "&") {
@@ -59,7 +61,11 @@ func WithParams(p P) Option {
 
 func WithHeaders(headers H) Option {
 	return func(o *requestOptions) {
-		o.headers = headers
+		if o.headers == nil {
+			o.headers = headers
+			return
+		}
+		o.headers.override(headers)
 	}
 }
 
@@ -72,6 +78,15 @@ func WithBodyJson(v interface{}) Option {
 			}
 			return bytes.NewBuffer(bs), nil
 		}
+
+		if o.headers == nil {
+			o.headers = H{}
+		}
+
+		if _, ok := o.headers[headerContentTypeKey]; !ok {
+			o.headers.Set(headerContentTypeKey, "application/json")
+		}
+
 	}
 }
 

@@ -1,9 +1,8 @@
 package requests
 
 import (
+	"reflect"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestH_Add(t *testing.T) {
@@ -14,18 +13,17 @@ func TestH_Add(t *testing.T) {
 	}{
 		{"key", []string{"value", "value2"}, "Key"},
 		{"Key", []string{"value"}, "Key"},
-		{"Key", []string{}, "Key"},
+		{"Key", nil, "Key"},
 	}
 
-	for i, tc := range testcases {
+	for _, tc := range testcases {
 		h := H{}
 		for _, v := range tc.values {
 			h.Add(tc.key, v)
 		}
 
-		assert.Equal(t, len(tc.values), len(h[tc.expectKey]))
-		if len(tc.values) > 0 {
-			assert.EqualValues(t, tc.values, h[tc.expectKey], i)
+		if !reflect.DeepEqual(tc.values, h[tc.expectKey]) {
+			t.Errorf("header values: wanted %v, got %v", tc.values, h[tc.expectKey])
 		}
 	}
 }
@@ -47,8 +45,12 @@ func TestH_Set(t *testing.T) {
 		h.Set(tc.key, tc.value)
 		vs := h[tc.expectKey]
 
-		assert.Equal(t, 1, len(vs), i)
-		assert.Equal(t, tc.value, vs[0], i)
+		if len(vs) != 1 {
+			t.Fatalf("[%d] unexpected length of values %v", i, vs)
+		}
+		if tc.value != vs[0] {
+			t.Errorf("[%d] unmatch value %s != %s", i, tc.value, vs[0])
+		}
 	}
 }
 
@@ -68,7 +70,9 @@ func TestH_Del(t *testing.T) {
 		h.Del(tc.key)
 
 		_, ok := h[tc.expectKey]
-		assert.False(t, ok, i)
+		if ok {
+			t.Errorf("[%d] unexpect key %s", i, tc.expectKey)
+		}
 	}
 }
 
@@ -94,7 +98,9 @@ func TestP(t *testing.T) {
 			p.Del(k)
 		}
 
-		assert.Equal(t, tc.expect, p.String(), i)
+		if tc.expect != p.String() {
+			t.Errorf("[%d] unexpect string %s != %s", i, tc.expect, p.String())
+		}
 	}
 }
 
@@ -112,7 +118,13 @@ func TestP_Set(t *testing.T) {
 		p := tc.p
 		p.Set(tc.key, tc.value)
 		vs := p[tc.key]
-		assert.Equal(t, 1, len(vs), i)
-		assert.Equal(t, tc.value, vs[0], i)
+
+		if len(vs) != 1 {
+			t.Fatalf("[%d] unexpect length of %v", i, vs)
+		}
+
+		if tc.value != vs[0] {
+			t.Errorf("[%d] unexpect value. %s != %s", i, tc.value, vs[0])
+		}
 	}
 }
