@@ -132,6 +132,10 @@ func WithForm(fields map[string]string, files map[string]File) Option {
 			}
 
 			// set Content-Type
+			if o.headers == nil {
+				o.headers = H{}
+			}
+
 			o.headers.Set(headerContentTypeKey, mw.FormDataContentType())
 			return body, nil
 		}
