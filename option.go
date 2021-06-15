@@ -2,6 +2,7 @@ package requests
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"mime/multipart"
@@ -17,6 +18,7 @@ type requestOptions struct {
 	headers H
 	params  P
 	bodyfn  func() (io.Reader, error)
+	ctx     context.Context
 }
 
 var defaultRequestOptions = requestOptions{
@@ -34,7 +36,11 @@ func (o *requestOptions) newRequest(method, url string) (req *http.Request, err 
 		return
 	}
 
-	req, err = http.NewRequest(method, url, br)
+	ctx := o.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	req, err = http.NewRequestWithContext(ctx, method, url, br)
 	if err != nil {
 		return
 	}
@@ -139,5 +145,11 @@ func WithForm(fields map[string]string, files map[string]File) Option {
 			o.headers.Set(headerContentTypeKey, mw.FormDataContentType())
 			return body, nil
 		}
+	}
+}
+
+func WithContext(ctx context.Context) Option {
+	return func(o *requestOptions) {
+		o.ctx = ctx
 	}
 }
