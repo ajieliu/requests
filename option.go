@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"strings"
 )
@@ -102,6 +103,37 @@ func WithBodyReader(r io.Reader) Option {
 	return func(o *requestOptions) {
 		o.bodyfn = func() (io.Reader, error) {
 			return r, nil
+		}
+	}
+}
+
+func WithForm(fields map[string]string, files map[string]File) Option {
+	return func(o *requestOptions) {
+		o.bodyfn = func() (io.Reader, error) {
+			body := new(bytes.Buffer)
+			mw := multipart.NewWriter(body)
+			defer mw.Close()
+
+			// write fields
+			for k, v := range fields {
+				if err := mw.WriteField(k, v); err != nil {
+					return nil, err
+				}
+			}
+
+			// write files
+			for k, fh := range files {
+				w, err := mw.CreateFormFile(k, fh.Name())
+				if err != nil {
+					return nil, err
+				}
+				io.Copy(w, fh)
+				fh.Close()
+			}
+
+			// set Content-Type
+			o.headers.Set(headerContentTypeKey, mw.FormDataContentType())
+			return body, nil
 		}
 	}
 }

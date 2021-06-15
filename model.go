@@ -1,6 +1,7 @@
 package requests
 
 import (
+	"io"
 	"net/http"
 	"net/url"
 )
@@ -54,4 +55,25 @@ func (p P) Del(key string) P {
 
 func (p P) String() string {
 	return url.Values(p).Encode()
+}
+
+type File interface {
+	Name() string
+	io.ReadCloser
+}
+
+type mFile struct {
+	name string
+	io.ReadCloser
+}
+
+func NewRequestFile(name string, body io.ReadCloser) File {
+	return &mFile{
+		name:       name,
+		ReadCloser: body,
+	}
+}
+
+func (f *mFile) Name() string {
+	return f.Name()
 }
