@@ -19,6 +19,8 @@ type requestOptions struct {
 	params  P
 	bodyfn  func() (io.Reader, error)
 	ctx     context.Context
+
+	beforeRequestFn func(req *http.Request)
 }
 
 var defaultRequestOptions = requestOptions{
@@ -54,6 +56,10 @@ func (o *requestOptions) newRequest(method, url string) (req *http.Request, err 
 	}
 
 	req.URL.RawQuery += o.params.String()
+
+	if o.beforeRequestFn != nil {
+		o.beforeRequestFn(req)
+	}
 
 	return req, nil
 }
@@ -151,5 +157,11 @@ func WithForm(fields map[string]string, files map[string]File) Option {
 func WithContext(ctx context.Context) Option {
 	return func(o *requestOptions) {
 		o.ctx = ctx
+	}
+}
+
+func WithBeforeRequestFn(fn func(req *http.Request)) Option {
+	return func(options *requestOptions) {
+		options.beforeRequestFn = fn
 	}
 }
