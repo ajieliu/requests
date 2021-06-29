@@ -20,7 +20,7 @@ type requestOptions struct {
 	bodyfn  func() (io.Reader, error)
 	ctx     context.Context
 
-	beforeRequestFn func(req *http.Request)
+	onBeforeRequest func(req *http.Request)
 }
 
 var defaultRequestOptions = requestOptions{
@@ -57,8 +57,8 @@ func (o *requestOptions) newRequest(method, url string) (req *http.Request, err 
 
 	req.URL.RawQuery += o.params.String()
 
-	if o.beforeRequestFn != nil {
-		o.beforeRequestFn(req)
+	if o.onBeforeRequest != nil {
+		o.onBeforeRequest(req)
 	}
 
 	return req, nil
@@ -160,8 +160,8 @@ func WithContext(ctx context.Context) Option {
 	}
 }
 
-func WithBeforeRequestFn(fn func(req *http.Request)) Option {
+func WithOnBeforeRequest(fn func(req *http.Request)) Option {
 	return func(options *requestOptions) {
-		options.beforeRequestFn = fn
+		options.onBeforeRequest = fn
 	}
 }
