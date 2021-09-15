@@ -175,6 +175,8 @@ func TestNewRequest(t *testing.T) {
 				func() (io.Reader, error) {
 					return bytes.NewReader([]byte{1}), nil
 				},
+				nil,
+				nil,
 			},
 			P{}.Add("name", "l"),
 			[]byte{1},
@@ -190,6 +192,8 @@ func TestNewRequest(t *testing.T) {
 				func() (io.Reader, error) {
 					return bytes.NewReader([]byte{1}), nil
 				},
+				nil,
+				nil,
 			},
 			P{}.Add("name", "test").Add("name", "l").Add("age", "12"),
 			[]byte{1},
@@ -205,6 +209,8 @@ func TestNewRequest(t *testing.T) {
 				func() (io.Reader, error) {
 					return nil, errors.New("test error")
 				},
+				nil,
+				nil,
 			},
 			P{}.Add("name", "test"),
 			[]byte{1},

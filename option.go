@@ -119,7 +119,7 @@ func WithBodyReader(r io.Reader) Option {
 	}
 }
 
-func WithForm(fields map[string]string, files map[string]File) Option {
+func WithForm(fields map[string][]string, files map[string]File) Option {
 	return func(o *requestOptions) {
 		o.bodyfn = func() (io.Reader, error) {
 			body := new(bytes.Buffer)
@@ -127,9 +127,11 @@ func WithForm(fields map[string]string, files map[string]File) Option {
 			defer mw.Close()
 
 			// write fields
-			for k, v := range fields {
-				if err := mw.WriteField(k, v); err != nil {
-					return nil, err
+			for k, vs := range fields {
+				for _, v := range vs {
+					if err := mw.WriteField(k, v); err != nil {
+						return nil, err
+					}
 				}
 			}
 
