@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -115,6 +116,15 @@ func WithBodyReader(r io.Reader) Option {
 	return func(o *requestOptions) {
 		o.bodyfn = func() (io.Reader, error) {
 			return r, nil
+		}
+	}
+}
+
+func WithFormUrlEncoded(fields map[string][]string) Option {
+	return func(o *requestOptions) {
+		o.bodyfn = func() (io.Reader, error) {
+			WithHeaders(H{}.Add("Content-Type", "application/x-www-form-urlencoded"))(o)
+			return strings.NewReader(url.Values(fields).Encode()), nil
 		}
 	}
 }
