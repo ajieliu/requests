@@ -64,6 +64,10 @@ func Post(url string, opts ...Option) (*Response, error) {
 	return dr.Post(url, opts...)
 }
 
+func Delete(url string, opts ...Option) (*Response, error) {
+	return dr.Delete(url, opts...)
+}
+
 func Put(url string, opts ...Option) (*Response, error) {
 	return dr.Put(url, opts...)
 }
