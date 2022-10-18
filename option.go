@@ -49,6 +49,9 @@ func (o *requestOptions) newRequest(method, url string) (req *http.Request, err 
 	}
 
 	for k, vs := range o.headers {
+		if strings.ToLower(k) == "host" {
+			req.Host = vs[len(vs)-1]
+		}
 		req.Header[k] = append(req.Header[k], vs...)
 	}
 
