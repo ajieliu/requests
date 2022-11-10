@@ -6,11 +6,15 @@ var (
 	dr = NewRequest(http.DefaultClient)
 )
 
-type Request struct {
-	c *http.Client
+type HTTPDoer interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
-func NewRequest(c *http.Client) *Request {
+type Request struct {
+	c HTTPDoer
+}
+
+func NewRequest(c HTTPDoer) *Request {
 	return &Request{c: c}
 }
 
