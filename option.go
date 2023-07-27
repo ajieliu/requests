@@ -177,6 +177,9 @@ func WithContext(ctx context.Context) Option {
 
 func WithOnBeforeRequest(fn func(req *http.Request)) Option {
 	return func(options *requestOptions) {
+		if fn == nil {
+			return
+		}
 		options.onBeforeRequestFns = append(options.onBeforeRequestFns, fn)
 	}
 }
