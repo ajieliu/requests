@@ -86,6 +86,15 @@ func WithHeaders(headers H) Option {
 	}
 }
 
+func WithHeader(key string, v ...string) Option {
+	return func(o *requestOptions) {
+		if o.headers == nil {
+			o.headers = H{}
+		}
+		o.headers[key] = v
+	}
+}
+
 func WithBodyJson(v interface{}) Option {
 	return func(o *requestOptions) {
 		o.bodyfn = func() (io.Reader, error) {
