@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"reflect"
 	"strings"
@@ -29,7 +28,7 @@ func TestWithBodyBytes(t *testing.T) {
 			t.Error(err)
 		}
 
-		data, err := ioutil.ReadAll(r)
+		data, err := io.ReadAll(r)
 		if err != nil {
 			t.Errorf("[%d] unexpect error with read data: %v", i, err)
 		}
@@ -79,7 +78,7 @@ func TestWithBodyJson(t *testing.T) {
 			t.Errorf("[%d] expected error %v does not occurred", i, tc.err)
 		}
 
-		data, err := ioutil.ReadAll(r)
+		data, err := io.ReadAll(r)
 		if err != nil {
 			t.Errorf("[%d] unexpect error: %v", i, err)
 		}
@@ -108,7 +107,7 @@ func TestWithBodyReader(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		data, err := ioutil.ReadAll(r)
+		data, err := io.ReadAll(r)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -157,6 +156,7 @@ func TestWithParams(t *testing.T) {
 }
 
 func TestNewRequest(t *testing.T) {
+	ioErr := errors.New("io error")
 	testcases := []struct {
 		method        string
 		url           string
@@ -207,7 +207,7 @@ func TestNewRequest(t *testing.T) {
 				H{}.Add("key", "value"),
 				P{}.Add("name", "l"),
 				func() (io.Reader, error) {
-					return nil, errors.New("test error")
+					return nil, ioErr
 				},
 				nil,
 				nil,
@@ -215,13 +215,13 @@ func TestNewRequest(t *testing.T) {
 			P{}.Add("name", "test"),
 			[]byte{1},
 			H{}.Add("key", "value"),
-			errors.New("test error"),
+			ioErr,
 		},
 	}
 
 	for _, tc := range testcases {
 		req, err := tc.opts.newRequest(tc.method, tc.url)
-		if !reflect.DeepEqual(tc.expectErr, err) {
+		if tc.expectErr != err {
 			t.Errorf("new request error: wanted %v, got %v", tc.expectErr, err)
 		}
 		if err != nil {

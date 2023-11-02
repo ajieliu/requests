@@ -31,6 +31,7 @@ func (rc *mockReadCloser) Read(p []byte) (n int, err error) {
 }
 
 func TestResponse_Json(t *testing.T) {
+	ioErr := errors.New("mock io error")
 	type mockResponseData struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
@@ -46,7 +47,7 @@ func TestResponse_Json(t *testing.T) {
 		{strings.NewReader("{\"id\":\"123\",\"name\":\"abc\",\"others\":\"21\"}"), &mockResponseData{"123", "abc", 0}, nil},
 		{strings.NewReader("{\"id\":\"123\",\"name\":\"abc\"}"), &mockResponseData{"123", "abc", 0}, nil},
 		{strings.NewReader("{}"), &mockResponseData{"", "", 0}, nil},
-		{iotest.ErrReader(errors.New("mock error")), &mockResponseData{}, errors.New("mock error")},
+		{iotest.ErrReader(ioErr), &mockResponseData{}, ioErr},
 	}
 
 	for i, tc := range testcases {
@@ -56,7 +57,7 @@ func TestResponse_Json(t *testing.T) {
 		v := &mockResponseData{}
 		err := resp.Json(v)
 
-		if !reflect.DeepEqual(tc.expectErr, err) {
+		if tc.expectErr != err {
 			t.Fatalf("response json error: wanted %v, got %v", tc.expectErr, err)
 		}
 

@@ -75,5 +75,5 @@ func NewRequestFile(name string, body io.ReadCloser) File {
 }
 
 func (f *mFile) Name() string {
-	return f.Name()
+	return f.name
 }
