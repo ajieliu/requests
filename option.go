@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -49,10 +51,18 @@ func (o *requestOptions) newRequest(method, url string) (req *http.Request, err 
 	}
 
 	for k, vs := range o.headers {
-		if strings.ToLower(k) == "host" {
+		switch strings.ToLower(k) {
+		case "host":
 			req.Host = vs[len(vs)-1]
+		case "content-length":
+			req.ContentLength, err = strconv.ParseInt(vs[0], 10, 64)
+			if err != nil {
+				err = fmt.Errorf("invalid Content-Length header: %s", vs[0])
+				return
+			}
+		default:
+			req.Header[k] = append(req.Header[k], vs...)
 		}
-		req.Header[k] = append(req.Header[k], vs...)
 	}
 
 	if req.URL.RawQuery != "" && !strings.HasSuffix(req.URL.RawQuery, "&") {
@@ -132,6 +142,15 @@ func WithBodyReader(r io.Reader) Option {
 		o.bodyfn = func() (io.Reader, error) {
 			return r, nil
 		}
+	}
+}
+
+func WithBodyReaderAndLength(r io.Reader, length int64) Option {
+	return func(o *requestOptions) {
+		o.bodyfn = func() (io.Reader, error) {
+			return r, nil
+		}
+		o.headers.Set("Content-Length", strconv.FormatInt(length, 10))
 	}
 }
 
