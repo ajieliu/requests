@@ -21,7 +21,7 @@ type requestOptions struct {
 	bodyfn  func() (io.Reader, error)
 	ctx     context.Context
 
-	onBeforeRequestFns []func(req *http.Request)
+	onBeforeRequestFns []func(req *http.Request) error
 }
 
 var defaultRequestOptions = requestOptions{
@@ -62,7 +62,10 @@ func (o *requestOptions) newRequest(method, url string) (req *http.Request, err 
 	req.URL.RawQuery += o.params.String()
 
 	for _, fn := range o.onBeforeRequestFns {
-		fn(req)
+		err = fn(req)
+		if err != nil {
+			return
+		}
 	}
 
 	return req, nil
@@ -184,7 +187,8 @@ func WithContext(ctx context.Context) Option {
 	}
 }
 
-func WithOnBeforeRequest(fn func(req *http.Request)) Option {
+// WithOnBeforeRequest add a function to be called before request.
+func WithOnBeforeRequest(fn func(req *http.Request) (err error)) Option {
 	return func(options *requestOptions) {
 		if fn == nil {
 			return
