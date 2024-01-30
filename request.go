@@ -1,27 +1,47 @@
 package requests
 
-import "net/http"
+import (
+	"net/http"
+	"strings"
+)
 
 var (
 	dr = NewRequest(http.DefaultClient)
 )
 
-type HTTPDoer interface {
+// Deprecated: use HTTPClient instead
+type HTTPDoer HTTPClient
+
+type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
 type Request struct {
-	c HTTPDoer
+	c       HTTPClient
+	baseURL string
 }
 
-func NewRequest(c HTTPDoer) *Request {
+// Deprecated: use NewClient instead
+func NewRequest(c HTTPClient) *Request {
 	return &Request{c: c}
+}
+
+func NewClient(c HTTPClient) Client {
+	return NewClientWithBaseURL(c, "")
+}
+
+// NewClientWithBaseURL returns a new Request with a base URL
+func NewClientWithBaseURL(c HTTPClient, baseURL string) Client {
+	return &Request{c: c, baseURL: strings.TrimSuffix(baseURL, "/")}
 }
 
 func (r *Request) Request(method, url string, opts ...Option) (response *Response, err error) {
 	options := defaultRequestOptions
 	for _, opt := range opts {
 		opt(&options)
+	}
+	if r.baseURL != "" {
+		url = r.baseURL + "/" + strings.TrimPrefix(url, "/")
 	}
 
 	req, err := options.newRequest(method, url)
@@ -60,6 +80,10 @@ func (r *Request) Head(url string, opts ...Option) (*Response, error) {
 	return r.Request(http.MethodHead, url, opts...)
 }
 
+func (r *Request) Options(url string, opts ...Option) (*Response, error) {
+	return r.Request(http.MethodOptions, url, opts...)
+}
+
 func Get(url string, opts ...Option) (*Response, error) {
 	return dr.Get(url, opts...)
 }
@@ -82,4 +106,8 @@ func Patch(url string, opts ...Option) (*Response, error) {
 
 func Head(url string, opts ...Option) (*Response, error) {
 	return dr.Head(url, opts...)
+}
+
+func Options(url string, opts ...Option) (*Response, error) {
+	return dr.Options(url, opts...)
 }
